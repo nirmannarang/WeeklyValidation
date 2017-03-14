@@ -55,7 +55,7 @@ for filename in *; do
     echo -en '\n\n'
     echo -en '#Installing r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev gfortran python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1 libsnappy-dev build-essential \n'
     apt-get update
-    apt-get -y install r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev gfortran python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1 libsnappy-dev build-essential
+    apt-get -y install r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev gfortran python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1v5 libsnappy-dev build-essential
     echo -en '\n\n'
     echo -en '#Downloading and Installing Maven 3.3.9\n'
     apt-get remove maven2
