@@ -1,0 +1,115 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <jenkins.triggers.ReverseBuildTrigger>
+      <spec></spec>
+  <upstreamProjects>10.77.67.159-SparkBranch-2.0-Hadoop-2.7-without-Hive-OPENJDK-WeeklyBuild</upstreamProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+        <completeBuild>true</completeBuild>
+      </threshold>
+    </jenkins.triggers.ReverseBuildTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash
+
+
+workDir=/root/WeeklyValidation
+IPbaremetal=10.77.67.159
+#sudo scp -r ${workDir} root@${IPbaremetal}:/root/sshTest
+ssh root@${IPbaremetal} /bin/bash &lt;&lt;&apos;EOF&apos;
+echo &quot;These commands will be run on: $( uname -a )&quot;
+echo &quot;They are executed by: $( whoami )&quot;
+cd /root/sshTest/WeeklyValidation
+workDirR=$(pwd)
+IPbaremetalR=10.77.67.159
+cd baremetalMachines/
+FunctionalTests=$(grep -Po &apos;(?&lt;=FunctionalTests=).*&apos; ${IPbaremetalR})
+PythonTests=$(grep -Po &apos;(?&lt;=PythonTests=).*&apos; ${IPbaremetalR})
+RTests=$(grep -Po &apos;(?&lt;=RTests=).*&apos; ${IPbaremetalR})
+jdk_val=$(grep -Po &apos;(?&lt;=JDK_VAL=).*&apos; ${IPbaremetalR})
+branchClone=$(grep -Po &apos;(?&lt;=branchClone=).*&apos; ${IPbaremetalR})
+hiveBuild=$(grep -Po &apos;(?&lt;=buildWithHive=).*&apos; ${IPbaremetalR})
+hadoopVer=$(grep -Po &apos;(?&lt;=hadoopVer=).*&apos; ${IPbaremetalR})
+
+cd ${workDirR}
+
+if [ $hiveBuild == TRUE ]
+then
+  hiveFlag=with
+elif [ $hiveBuild == FALSE ]
+then
+  hiveFlag=without
+fi
+
+
+echo -en &apos;#Creating workspace directories for jobs\n&apos;
+mkdir -p ${workDirR}/workspace/${IPbaremetalR}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyFunctionalTests
+cd ${workDirR}/workspace/${IPbaremetalR}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild/spark
+
+if [ $jdk_val == OPENJDK ]
+then
+  export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-ppc64el
+  export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+elif [ $jdk_val == IBMJDK ]
+then
+  export JAVA_HOME=$(grep -Po &apos;(?&lt;=USER_INSTALL_DIR=).*&apos; ${workDirR}/baremetalMachines/${IPbaremetalR})
+  export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+fi
+
+java -version
+
+echo $hiveBuild
+
+
+
+# Build Spark
+# This enables yarn and hadoop profiles.
+# We do not specify a yarn.version and assume it is same as hadoop.version
+#
+# A hadoop.version must be compatible with the hadoop profile. For this
+# reason, we only build against version 2.6.0.
+#
+#build/mvn -Pyarn -Phadoop-2.7 -Psparkr -Dhadoop.version=2.7.0 -DskipTests clean package
+
+# Run tests
+
+echo $hiveBuild
+
+if [ $hiveBuild == TRUE ]
+then
+  echo &quot; Testing with Hive and JDBC Support \n &quot;
+  build/mvn --fail-never -Pyarn -Phadoop-${hadoopVer} -Dhadoop.version=${hadoopVer}.0 -Phive -Phive-thriftserver test
+elif [ $hiveBuild == FALSE ]
+then
+  echo &quot; Testing without Hive and JDBC Support \n &quot;
+  build/mvn --fail-never -Pyarn -Phadoop-${hadoopVer} -Dhadoop.version=${hadoopVer}.0 test
+fi
+
+EOF
+#python/run-tests
+#R/run-tests.sh
+
+#Backup log with timestamp
+now=$(date +&quot;%d-%m-%Y_%H:%M:%S&quot;)
+
+sudo cp /var/lib/jenkins/jobs/${JOB_NAME}/builds/${BUILD_NUMBER}/log ${workDir}/logs/${JOB_NAME}/${JOB_NAME}_${now}.log
+      </command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

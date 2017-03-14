@@ -1,0 +1,92 @@
+#!/bin/bash -l
+
+workdir=$(pwd)
+cd ${workdir}/baremetalMachines/
+for filename in *; do
+    cd ${workdir}/baremetalMachines/
+    echo ${filename}
+    IPbaremetal=${filename}
+    #sudo scp -r ${workDir} root@${IPbaremetal}:/root/sshTest
+    FunctionalTests=$(grep -Po '(?<=FunctionalTests=).*' ${filename})
+    PythonTests=$(grep -Po '(?<=PythonTests=).*' ${filename})
+    RTests=$(grep -Po '(?<=RTests=).*' ${filename})
+    jdk_val=$(grep -Po '(?<=JDK_VAL=).*' ${filename})
+    branchClone=$(grep -Po '(?<=branchClone=).*' ${filename})
+    hiveBuild=$(grep -Po '(?<=buildWithHive=).*' ${filename})
+    hadoopVer=$(grep -Po '(?<=hadoopVer=).*' ${filename})
+    
+    if [ $hiveBuild == TRUE ]
+    then
+      hiveFlag=with
+    elif [ $hiveBuild == FALSE ]
+    then
+      hiveFlag=without
+    fi
+
+    cd ${workdir}
+    echo -en '#Creating log directories for jobs\n'
+    mkdir -p ${workdir}/logs/${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild
+    mkdir -p ${workdir}/logs/${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyFunctionalTests
+    mkdir -p ${workdir}/logs/${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyPythonTests
+    mkdir -p ${workdir}/logs/${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyRTests
+
+    echo -en 'Configuring Job XML files \n'
+    sed -i "s#workDir=.*#workDir=${workdir}#g" ${workdir}/SparkWeeklyBuild_config.xml
+    sed -i "s#workDir=.*#workDir=${workdir}#g" ${workdir}/SparkWeeklyFunctionalTests_config.xml
+    sed -i "s#workDir=.*#workDir=${workdir}#g" ${workdir}/SparkPythonWeekly_config.xml
+    sed -i "s#workDir=.*#workDir=${workdir}#g" ${workdir}/SparkRTestWeekly_config.xml
+    jobUpstream=${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild
+    echo -en '\n\n'
+    echo -en 'The Upstream job for Tests is ${jobUpstream} \n\n'
+    sed -i "/upstreamProjects/c\  <upstreamProjects>${jobUpstream}</upstreamProjects>" ${workdir}/SparkWeeklyFunctionalTests_config.xml
+    sed -i "/upstreamProjects/c\  <upstreamProjects>${jobUpstream}</upstreamProjects>" ${workdir}/SparkPythonWeekly_config.xml
+    sed -i "/upstreamProjects/c\  <upstreamProjects>${jobUpstream}</upstreamProjects>" ${workdir}/SparkRTestWeekly_config.xml
+    sed -i "s#IPbaremetal=.*#IPbaremetal=${IPbaremetal}#g" ${workdir}/SparkWeeklyBuild_config.xml
+    sed -i "s#IPbaremetal=.*#IPbaremetal=${IPbaremetal}#g" ${workdir}/SparkWeeklyFunctionalTests_config.xml
+    sed -i "s#IPbaremetal=.*#IPbaremetal=${IPbaremetal}#g" ${workdir}/SparkPythonWeekly_config.xml
+    sed -i "s#IPbaremetal=.*#IPbaremetal=${IPbaremetal}#g" ${workdir}/SparkRTestWeekly_config.xml
+    sed -i "s#IPbaremetalR=.*#IPbaremetalR=${IPbaremetal}#g" ${workdir}/SparkWeeklyBuild_config.xml
+    sed -i "s#IPbaremetalR=.*#IPbaremetalR=${IPbaremetal}#g" ${workdir}/SparkWeeklyFunctionalTests_config.xml
+    sed -i "s#IPbaremetalR=.*#IPbaremetalR=${IPbaremetal}#g" ${workdir}/SparkPythonWeekly_config.xml
+    sed -i "s#IPbaremetalR=.*#IPbaremetalR=${IPbaremetal}#g" ${workdir}/SparkRTestWeekly_config.xml
+
+
+    echo -en '#Creating SparkWeeklyBuild job from supplied config.xml\n'
+    java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ create-job ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild < SparkWeeklyBuild_config.xml
+    echo -en '\n\n'
+    echo -en '#Triggering build\n'
+    java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ build ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild
+
+    if [ $FunctionalTests == TRUE ]
+    then
+      echo -en '#Creating SparkWeeklyFunctionalTests job from supplied config.xml\n'
+      java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ create-job ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyFunctionalTests < SparkWeeklyFunctionalTests_config.xml
+      echo -en '\n\n'
+      #echo -en '#Triggering Functional Tests\n'
+      #java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ build ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyFunctionalTests
+    fi
+
+    echo -en '\n\n'
+
+    if [ $PythonTests == TRUE ]
+    then
+      echo -en '#Creating SparkPythonWeekly job from supplied config.xml\n'
+      java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ create-job ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyPythonTests < SparkPythonWeekly_config.xml
+      echo -en '\n\n'
+      #echo -en '#Triggering Python Tests\n'
+      #java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ build ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyPythonTests
+    fi
+
+    echo -en '\n\n'
+
+    if [ $RTests == TRUE ]
+    then
+      echo -en '#Creating SparkRTestWeekly job from supplied config.xml\n'
+      java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ create-job ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyRTests < SparkRTestWeekly_config.xml
+      echo -en '\n\n'
+      #echo -en '#Triggering R Tests\n'
+      #java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ build ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyRTests
+    fi
+
+done
+exit 0

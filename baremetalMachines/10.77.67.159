@@ -1,0 +1,7 @@
+JDK_VAL=OPENJDK
+branchClone=2.0
+hadoopVer=2.7
+buildWithHive=FALSE
+FunctionalTests=TRUE
+PythonTests=TRUE
+RTests=TRUE
