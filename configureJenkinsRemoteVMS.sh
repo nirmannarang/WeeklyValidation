@@ -39,26 +39,43 @@ chmod +x triggerBaremetal
 cd ${workdir}/baremetalMachines/
 for filename in *; do
     cd ${workdir}/baremetalMachines/
-    echo ${filename}
+    echo -en 'Configuring Machine ' ${filename}
     IPbaremetal=${filename}
     echo ${IPbaremetal}
-    sudo scp -r ${workdir} root@${IPbaremetal}:/root
-    ssh root@${IPbaremetal} /bin/bash <<'EOF'
+    userName=$(grep -Po '(?<=userName=).*' ${filename})
+    passWord=$(grep -Po '(?<=passWord=).*' ${filename})
+    scp -r ${workdir} ${userName}@${IPbaremetal}:
+    ssh ${userName}@${IPbaremetal} /bin/bash <<'EOF'
     #ssh root@${IPbaremetal}
-    cd /root/WeeklyValidation
+    cd WeeklyValidation
     pwd
     workdirR=$(pwd)
-    echo -en '#Installing Git\n'
-    apt-get -y install git
-    echo -en '#Installing R for sparkR-pkg\n'
-    apt-get -y install r-base-core
-    echo -en '\n\n'
-    echo -en '#Installing r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev gfortran python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1 libsnappy-dev build-essential \n'
-    apt-get update
-    apt-get -y install r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev gfortran python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1v5 libsnappy-dev build-essential
+    #IPbaremetalR="$(ifconfig | grep -A 1 'eth0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
+    #IPbaremetalR=${ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'}
+    IPbaremetalR=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+    echo ${IPbaremetalR}
+    userNameR=$(grep -Po '(?<=userName=).*' ${workdirR}/baremetalMachines/${IPbaremetalR})
+    passWordR=$(grep -Po '(?<=passWord=).*' ${workdirR}/baremetalMachines/${IPbaremetalR})
+    if [ "$(. /etc/os-release; echo $NAME)" = "Ubuntu" ]; then
+      echo -en '#Installing Git\n'
+      #echo ${passWordR} | sudo -S update-alternatives --install
+      echo ${passWordR} | sudo -S apt-get -y install git
+      echo -en '#Installing R for sparkR-pkg\n'
+      echo ${passWordR} | sudo -S apt-get -y install r-base-core
+      echo -en '\n\n'
+      echo -en '#Installing r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1 libsnappy-dev build-essential libstdc++6 \n'
+      echo ${passWordR} | sudo -S apt-get update
+      echo ${passWordR} | sudo -S apt-get -y install r-cran-testthat python-nose python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1v5 libsnappy-dev build-essential libstdc++6 cython
+    else
+        #sudo -S vi /etc/yum/pluginconf.d/search-disabled-repos.conf
+        echo ${passWordR} | sudo -S yum -y update
+        echo -en '#Installing numpy scipy gfortran snappy snappy-devel and build-essential tools \n'
+        echo ${passWordR} | sudo -S yum --assumeyes -y install R
+        echo ${passWordR} | sudo -S yum -y groupinstall 'Development Tools'
+        echo ${passWordR} | sudo -S yum -y install snappy snappy-devel zip r-cran-testthat numpy python34-devel python34-numpy python34-scipy python-devel scipy Cython 
+    fi
     echo -en '\n\n'
     echo -en '#Downloading and Installing Maven 3.3.9\n'
-    apt-get remove maven2
     rm -rf apache-maven-3.*
     wget http://apache.mirrors.lucidnetworks.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
     mkdir -p maven
@@ -92,25 +109,26 @@ for filename in *; do
     make FC=gfortran
     make PREFIX=${workdirR}/openblas install
     echo -e "${workdirR}/openblas/lib" > openblas.conf
-    mv openblas.conf /etc/ld.so.conf.d/
-    ldconfig
+    echo ${passWordR} | sudo -S mv openblas.conf /etc/ld.so.conf.d/
+    echo ${passWordR} | sudo -S ldconfig
     echo -en '#Download and install jdk as per JDK_VAL in installer.properties file\n'
-    apt-get -y install libstdc++6
-    cd ${workdirR}/baremetalMachines/
-    IPbaremetalR="$(ifconfig | grep -A 1 'eth0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1)"
-    #IPbaremetalR=${ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'}
-    echo ${IPbaremetalR}
+    cd ${workdirR}
     jdk_val=$(grep -Po '(?<=JDK_VAL=).*' ${workdirR}/baremetalMachines/${IPbaremetalR})
     echo ${jdk_val}
-    cd ${workdirR}
     if [ ${jdk_val} = "OPENJDK" ]
     then
-      echo -en "Installing OPENJDK \n"
-      apt-get -y install openjdk-8-jdk
-      echo -en '\n\n'
-      echo -en "Setting OpenJDK path and JAVA_HOME\n"
-      export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-ppc64el
-      export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+      if [ "$(. /etc/os-release; echo $NAME)" = "Ubuntu" ]; then
+        echo -en "Installing OPENJDK \n"
+        echo ${passWordR} | sudo -S apt-get -y install openjdk-8-jdk
+        echo -en '\n\n'
+        echo -en "Setting OpenJDK path and JAVA_HOME\n"
+        export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-ppc64el
+        export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+      else
+        echo ${passWordR} | sudo -S yum install java-1.8.0-openjdk-devel
+        export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+        export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+      fi
     elif [ ${jdk_val} = "IBMJDK" ]
     then
       echo -en "Downloading and Installing IBM JDK\n"
@@ -121,9 +139,9 @@ for filename in *; do
       chmod +x ibm-java-sdk-8.0-3.22-ppc64le-archive.bin
       echo -en '\n\n'
       echo -en "Installing IBMJDK as per the installation directory specified in installer.properties\n"
-      ./ibm-java-sdk-8.0-3.22-ppc64le-archive.bin -i silent -f installer.properties 1>console.txt 2>&1
+      echo ${passWordR} | sudo -S ./ibm-java-sdk-8.0-3.22-ppc64le-archive.bin -i silent -f installer.properties 1>console.txt 2>&1
       echo -en "Setting IBMJDK path and JAVA_HOME\n"
-      export JAVA_HOME=$(grep -Po '(?<=USER_INSTALL_DIR=).*' ${IPbaremetalR})
+      export JAVA_HOME=$(grep -Po '(?<=USER_INSTALL_DIR=).*' ${workdirR}/baremetalMachines/${IPbaremetalR})
       export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
     # JAVA_HOME
     #  echo 'pw4jenkins' | sudo -kS update-alternatives --install "/usr/bin/java" "java" "/opt/IBM/java/ibm_java_x86_64_80/" 1

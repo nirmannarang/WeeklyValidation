@@ -5,3 +5,5 @@ buildWithHive=FALSE
 FunctionalTests=TRUE
 PythonTests=TRUE
 RTests=TRUE
+userName=root
+passWord=root1234
