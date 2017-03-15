@@ -12,7 +12,7 @@
   <triggers>
     <jenkins.triggers.ReverseBuildTrigger>
       <spec></spec>
-  <upstreamProjects>10.77.67.159-SparkBranch-2.0-Hadoop-2.7-without-Hive-OPENJDK-WeeklyBuild</upstreamProjects>
+      <upstreamProjects>10.77.67.159-SparkBranch-2.0-Hadoop-2.7-without-Hive-OPENJDK-WeeklyBuild</upstreamProjects>
       <threshold>
         <name>SUCCESS</name>
         <ordinal>0</ordinal>
@@ -28,11 +28,13 @@
 
 workDir=/root/WeeklyValidation
 IPbaremetal=10.77.67.159
-#sudo scp -r ${workDir} root@${IPbaremetal}:/root/sshTest
-ssh root@${IPbaremetal} /bin/bash &lt;&lt;&apos;EOF&apos;
+userName=$(grep -Po &apos;(?&lt;=userName=).*&apos; ${workDir}/baremetalMachines/${IPbaremetal})
+passWord=$(grep -Po &apos;(?&lt;=passWord=).*&apos; ${workDir}/baremetalMachines/${IPbaremetal})
+
+ssh ${userName}@${IPbaremetal} /bin/bash &lt;&lt;&apos;EOF&apos;
 echo &quot;These commands will be run on: $( uname -a )&quot;
 echo &quot;They are executed by: $( whoami )&quot;
-cd /root/sshTest/WeeklyValidation
+cd WeeklyValidation
 workDirR=$(pwd)
 IPbaremetalR=10.77.67.159
 cd baremetalMachines/
@@ -43,7 +45,6 @@ jdk_val=$(grep -Po &apos;(?&lt;=JDK_VAL=).*&apos; ${IPbaremetalR})
 branchClone=$(grep -Po &apos;(?&lt;=branchClone=).*&apos; ${IPbaremetalR})
 hiveBuild=$(grep -Po &apos;(?&lt;=buildWithHive=).*&apos; ${IPbaremetalR})
 hadoopVer=$(grep -Po &apos;(?&lt;=hadoopVer=).*&apos; ${IPbaremetalR})
-
 cd ${workDirR}
 
 if [ $hiveBuild == TRUE ]
@@ -59,11 +60,18 @@ echo -en &apos;#Creating workspace directories for jobs\n&apos;
 mkdir -p ${workDirR}/workspace/${IPbaremetalR}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyRTests
 cd ${workDirR}/workspace/${IPbaremetalR}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild/spark
 
-if [ $jdk_val == OPENJDK ]
+if [ ${jdk_val} = &quot;OPENJDK&quot; ]
 then
-  export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-ppc64el
-  export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
-elif [ $jdk_val == IBMJDK ]
+  if [ &quot;$(. /etc/os-release; echo $NAME)&quot; = &quot;Ubuntu&quot; ]; then
+        echo -en &quot;Setting OpenJDK path and JAVA_HOME\n&quot;
+        export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-ppc64el
+        export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+      else
+        echo -en &quot;Setting OpenJDK path and JAVA_HOME\n&quot;
+        export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+        export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+      fi
+elif [ ${jdk_val} = &quot;IBMJDK&quot; ]
 then
   export JAVA_HOME=$(grep -Po &apos;(?&lt;=USER_INSTALL_DIR=).*&apos; ${workDirR}/baremetalMachines/${IPbaremetalR})
   export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
@@ -78,7 +86,7 @@ EOF
 
 now=$(date +&quot;%d-%m-%Y_%H:%M:%S&quot;)
 
-sudo cp /var/lib/jenkins/jobs/${JOB_NAME}/builds/${BUILD_NUMBER}/log ${workDir}/logs/${JOB_NAME}/${JOB_NAME}_${now}.log
+cp /var/lib/jenkins/jobs/${JOB_NAME}/builds/${BUILD_NUMBER}/log ${workDir}/logs/${JOB_NAME}/${JOB_NAME}_${now}.log
 </command>
     </hudson.tasks.Shell>
   </builders>
