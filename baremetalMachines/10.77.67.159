@@ -1,10 +1,10 @@
 JDK_VAL=OPENJDK
-branchClone=2.0
+branchClone=2.1
 hadoopVer=2.7
 buildWithHive=FALSE
 FunctionalTests=TRUE
 PythonTests=TRUE
 RTests=TRUE
-userName=root
-passWord=root1234
+userName=jenkins
+passWord=pw4jenkins
 

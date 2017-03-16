@@ -1,9 +1,9 @@
-JDK_VAL=OPENJDK
+JDK_VAL=IBMJDK
 branchClone=2.0
-hadoopVer=2.7
-buildWithHive=FALSE
+hadoopVer=2.6
+buildWithHive=TRUE
 FunctionalTests=TRUE
 PythonTests=TRUE
 RTests=TRUE
-userName=root
+userName=nirman
 passWord=root1234
