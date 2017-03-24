@@ -12,7 +12,7 @@ echo -en '\n\n'
 #echo -e '\nworkdir='${workdir}'\n' >> installer.properties
 
 echo -en '#Configuring PPA and Installing Jenkins\n\n'
-wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo -S apt-key add -
+wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
 sudo -S sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
 sudo -S apt-get update
 sudo -S apt-get -y install jenkins
@@ -150,10 +150,13 @@ for filename in *; do
     export LEVELDB_HOME=`cd leveldb; pwd`
     export LEVELDBJNI_HOME=`cd leveldbjni; pwd`
     cd ${LEVELDB_HOME}
+    export LIBRARY_PATH=${SNAPPY_HOME}
+    export C_INCLUDE_PATH=${LIBRARY_PATH}
+    export CPLUS_INCLUDE_PATH=${LIBRARY_PATH}
     git apply ../leveldbjni/leveldb.patch
     make libleveldb.a
     cd ${LEVELDBJNI_HOME}
-    mvn clean install -P download -Plinux64,all
+    mvn clean install -DskipTests -P download -Plinux64,all
     cd ${workdirR}
 
     echo -en 'Setting up OpenBLAS \n\n'
