@@ -86,11 +86,13 @@ echo $hiveBuild
 if [ $hiveBuild == TRUE ]
 then
   echo &quot; Building with Hive and JDBC Support \n &quot;
-  build/mvn -Pyarn -Phadoop-${hadoopVer} -Psparkr -Dhadoop.version=${hadoopVer}.0 -Phive -Phive-thriftserver -DskipTests clean package
+  #build/mvn -Pyarn -Phadoop-${hadoopVer} -Psparkr -Dhadoop.version=${hadoopVer}.0 -Phive -Phive-thriftserver -DskipTests clean package
+  ./dev/make-distribution.sh --name custom-${branchClone}-spark --tgz -Psparkr -Phadoop-${hadoopVer} -Phive -Phive-thriftserver -Pyarn
 elif [ $hiveBuild == FALSE ]
 then
   echo &quot; Building without Hive and JDBC Support \n &quot;
-  build/mvn -Pyarn -Phadoop-${hadoopVer} -Psparkr -Dhadoop.version=${hadoopVer}.0 -DskipTests clean package
+  #build/mvn -Pyarn -Phadoop-${hadoopVer} -Psparkr -Dhadoop.version=${hadoopVer}.0 -DskipTests clean package
+  ./dev/make-distribution.sh --name custom-${branchClone}-spark --tgz -Psparkr -Phadoop-${hadoopVer} -Pyarn
 fi
 
 EOF
