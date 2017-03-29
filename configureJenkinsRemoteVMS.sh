@@ -114,7 +114,7 @@ for filename in *; do
 
       echo -en '#Installing r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1 libsnappy-dev build-essential libstdc++6 \n\n'
       echo ${passWordR} | sudo -S apt-get update
-      echo ${passWordR} | sudo -S apt-get -y install r-cran-testthat python-nose python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1v5 libsnappy-dev build-essential libstdc++6 cython
+      echo ${passWordR} | sudo -S apt-get -y install r-cran-testthat python-nose python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1v5 libsnappy-dev libsnappy1 build-essential libstdc++6 cython
     else
         #sudo -S vi /etc/yum/pluginconf.d/search-disabled-repos.conf
         #echo ${passWordR} | sudo -S yum -y update
