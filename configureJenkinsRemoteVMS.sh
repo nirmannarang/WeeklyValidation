@@ -131,7 +131,8 @@ for filename in *; do
 
     echo -en '#Downloading and Installing Maven 3.3.9\n\n'
     rm -rf apache-maven-3.*
-    wget http://apache.mirrors.lucidnetworks.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    #wget http://apache.mirrors.lucidnetworks.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    wget http://mirror.fibergrid.in/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
     mkdir -p maven
     mv apache-maven-3.3.9-bin.tar.gz maven/
     cd maven/
