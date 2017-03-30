@@ -85,8 +85,8 @@ fi
 
 java -version
 
-python/run-tests
-#R/run-tests.sh
+#python/run-tests
+R/run-tests.sh
 
 EOF
 
