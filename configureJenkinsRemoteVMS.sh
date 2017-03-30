@@ -103,8 +103,12 @@ for filename in *; do
       exit 1
     fi
     export PATH=$JAVA_HOME/bin:$PATH
+    
 
     if [ "$(. /etc/os-release; echo $NAME)" = "Ubuntu" ]; then
+      echo ${passWordR} | sudo -S apt-get install -y  ca-certificates-java
+      echo ${passWordR} | sudo -S update-ca-certificates -f
+
       echo -en '#Installing Git\n\n'
       #echo ${passWordR} | sudo -S update-alternatives --install
       echo ${passWordR} | sudo -S apt-get -y install git
