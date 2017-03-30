@@ -81,7 +81,7 @@ then
       fi
 elif [ ${jdk_val} = &quot;IBMJDK&quot; ]
 then
-  export JAVA_HOME=$(grep -Po &apos;(?&lt;=USER_INSTALL_DIR=).*&apos; ${workDirR}/baremetalMachines/${IPbaremetalR})
+  export JAVA_HOME=$(grep -Po &apos;(?&lt;=USER_INSTALL_DIR=).*&apos; ${workDirR}/installer.properties)
   export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
 fi
 
