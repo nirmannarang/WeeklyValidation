@@ -37,6 +37,12 @@ echo &quot;These commands will be run on: $( uname -a )&quot;
 echo &quot;They are executed by: $( whoami )&quot;
 cd WeeklyValidation
 workDirR=$(pwd)
+export SNAPPY_HOME=/usr/lib
+export LEVELDB_HOME=${workDirR}/leveldb
+export LEVELDBJNI_HOME=${workDirR}/leveldbjni
+export LIBRARY_PATH=${SNAPPY_HOME}
+export C_INCLUDE_PATH=${LIBRARY_PATH}
+export CPLUS_INCLUDE_PATH=${LIBRARY_PATH}
 IPbaremetalR=10.77.67.159
 cd baremetalMachines/
 FunctionalTests=$(grep -Po &apos;(?&lt;=FunctionalTests=).*&apos; ${IPbaremetalR})
