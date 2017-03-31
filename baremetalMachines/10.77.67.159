@@ -1,10 +1,21 @@
+#Enter the option for jdk (OPENJDK,IBMJDK)
 JDK_VAL=OPENJDK
+
+#Spark Branch to clone, Just enter the branch number eg 1.6, 2.0, 2.1 etc
 branchClone=2.1
+
+#Hadoop Version to be built with, Just enter the version eg 2.3, 2.4, 2.6, 2.7 etc
 hadoopVer=2.7
+
+#Set buildWithHive to TRUE if you want to build and test Spark with Hive and JDBC support otherwise set it FALSE
 buildWithHive=FALSE
+
+#Tests to run(Use TRUE to run, FALSE to skip)
 FunctionalTests=TRUE
 PythonTests=TRUE
 RTests=TRUE
+
+#Enter the credentials of the machine
 userName=jenkins
 passWord=pw4jenkins
 
