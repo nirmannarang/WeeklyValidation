@@ -1,6 +1,16 @@
 #!/bin/bash -l
 
 workdir=$(pwd)
+
+echo -en '#Setting Work Dir in installer.properties\n\n'
+workdir=`pwd`
+sed -i "s#workDir=.*#workDir=${workdir}#g" installer.properties
+echo -en 'Work Directory of Jenkins VM is set to ' $workdir
+
+sed -i "s#workDir=.*#workDir=${workdir}#g" ConfigureRemoteMachines.xml
+mkdir -p ${workdir}/logs/ConfigureRemoteMachines
+java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ create-job ConfigureRemoteMachines < ConfigureRemoteMachines.xml
+
 cd ${workdir}/baremetalMachines/
 for filename in *; do
     cd ${workdir}/baremetalMachines/
@@ -54,8 +64,8 @@ for filename in *; do
     echo -en '#Creating SparkWeeklyBuild job from supplied config.xml\n'
     java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ create-job ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild < SparkWeeklyBuild_config.xml
     echo -en '\n\n'
-    echo -en '#Triggering build\n'
-    java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ build ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild
+    #echo -en '#Triggering build\n'
+    #java -jar jenkins-cli.jar -noKeyAuth -s  http://localhost:8080/ build ${IPbaremetal}-SparkBranch-${branchClone}-Hadoop-${hadoopVer}-${hiveFlag}-Hive-${jdk_val}-WeeklyBuild
 
     if [ $FunctionalTests == TRUE ]
     then

@@ -12,7 +12,7 @@
   <triggers>
     <jenkins.triggers.ReverseBuildTrigger>
       <spec></spec>
-      <upstreamProjects>10.77.67.159-SparkBranch-2.0-Hadoop-2.7-without-Hive-OPENJDK-WeeklyBuild</upstreamProjects>
+  <upstreamProjects>10.77.67.159-SparkBranch-2.1-Hadoop-2.7-without-Hive-OPENJDK-WeeklyBuild</upstreamProjects>
       <threshold>
         <name>SUCCESS</name>
         <ordinal>0</ordinal>

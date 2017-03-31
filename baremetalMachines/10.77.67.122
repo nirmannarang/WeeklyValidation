@@ -11,9 +11,9 @@ hadoopVer=2.6
 buildWithHive=TRUE
 
 #Tests to run(Use TRUE to run, FALSE to skip)
-FunctionalTests=TRUE
-PythonTests=TRUE
-RTests=TRUE
+FunctionalTests=FALSE
+PythonTests=FALSE
+RTests=FALSE
 
 #Enter the credentials of the machine
 userName=nirman

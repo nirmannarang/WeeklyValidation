@@ -1,0 +1,160 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash
+
+workDir=/root/WeeklyValidation
+echo -en &apos;Configuring Remote Machines added in BaremetalMachines directory \n\n&apos;
+cd ${workdir}/baremetalMachines/
+for filename in *; do
+    cd ${workdir}/baremetalMachines/
+
+    echo -en &apos;Configuring Machine &apos; ${filename} &apos;\n\n&apos;
+    IPbaremetal=${filename}
+    echo -en &apos;\n\n&apos;
+    userName=$(grep -Po &apos;(?&lt;=userName=).*&apos; ${filename})
+    passWord=$(grep -Po &apos;(?&lt;=passWord=).*&apos; ${filename})
+
+    echo -en &apos;Copying WeeklyValidation to &apos; ${IPbaremetal} &apos; under User &apos; ${userName} &apos;\n\n&apos;
+    scp -r ${workdir} ${userName}@${IPbaremetal}:
+
+    echo -en &apos;ssh &apos; ${IPbaremetal} &apos; to user &apos; ${userName} &apos;\n\n&apos;
+    ssh ${userName}@${IPbaremetal} /bin/bash &lt;&lt;&apos;EOF&apos;
+    cd WeeklyValidation
+    pwd
+    workdirR=`pwd`
+    #IPbaremetalR=&quot;$(ifconfig | grep -A 1 &apos;eth0&apos; | tail -1 | cut -d &apos;:&apos; -f 2 | cut -d &apos; &apos; -f 1)&quot;
+    #IPbaremetalR=${ip addr | grep &apos;state UP&apos; -A2 | tail -n1 | awk &apos;{print $2}&apos; | cut -f1  -d&apos;/&apos;}
+    IPbaremetalR=$(/sbin/ip -o -4 addr list eth0 | awk &apos;{print $4}&apos; | cut -d/ -f1)
+    userNameR=$(grep -Po &apos;(?&lt;=userName=).*&apos; ${workdirR}/baremetalMachines/${IPbaremetalR})
+    passWordR=$(grep -Po &apos;(?&lt;=passWord=).*&apos; ${workdirR}/baremetalMachines/${IPbaremetalR})
+   
+    sed -i &quot;s#USER_INSTALL_DIR=.*#USER_INSTALL_DIR=${workdirR}/IBMJAVA#g&quot; installer.properties
+    echo -en &apos;#Downloading and installing jdk as per JDK_VAL in installer.properties file\n\n&apos;
+    jdk_val=$(grep -Po &apos;(?&lt;=JDK_VAL=).*&apos; ${workdirR}/baremetalMachines/${IPbaremetalR})
+    if [ ${jdk_val} = &quot;OPENJDK&quot; ]
+    then
+      if [ &quot;$(. /etc/os-release; echo $NAME)&quot; = &quot;Ubuntu&quot; ]; then
+        echo -en &apos;Installing OPENJDK \n\n&apos;
+        echo ${passWordR} | sudo -S apt-get -y install openjdk-8-jdk
+        echo -en &apos;Setting OpenJDK path and JAVA_HOME \n\n&apos;
+        export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-ppc64el
+        export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+      else
+        echo ${passWordR} | sudo -S yum install java-1.8.0-openjdk-devel
+        export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+        export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+      fi
+    elif [ ${jdk_val} = &quot;IBMJDK&quot; ]
+    then
+      echo -en &apos;Downloading and Installing IBM JDK \n\n&apos;
+      rm -rf ibm-java-ppc64le-sdk*
+      rm -rf ibm-java-sdk*
+      #wget http://public.dhe.ibm.com/ibmdl/export/pub/systems/cloud/runtimes/java/8.0.3.22/linux/ppc64le/ibm-java-ppc64le-sdk-8.0-3.22.bin
+      wget http://public.dhe.ibm.com/ibmdl/export/pub/systems/cloud/runtimes/java/8.0.3.22/linux/ppc64le/ibm-java-sdk-8.0-3.22-ppc64le-archive.bin
+      chmod +x ibm-java-sdk-8.0-3.22-ppc64le-archive.bin
+      echo -en &apos;Installing IBMJDK as per the installation directory specified in installer.properties \n\n&apos;
+      echo ${passWordR} | sudo -S ./ibm-java-sdk-8.0-3.22-ppc64le-archive.bin -i silent -f installer.properties 1&gt;console.txt 2&gt;&amp;1
+      echo -en &apos;Setting IBMJDK path and JAVA_HOME \n\n&apos;
+      export JAVA_HOME=$(grep -Po &apos;(?&lt;=USER_INSTALL_DIR=).*&apos; ${workdirR}/baremetalMachines/${IPbaremetalR})
+      export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+    # JAVA_HOME
+    #  echo &apos;pw4jenkins&apos; | sudo -kS update-alternatives --install &quot;/usr/bin/java&quot; &quot;java&quot; &quot;/opt/IBM/java/ibm_java_x86_64_80/&quot; 1
+    #  echo &apos;pw4jenkins&apos; | sudo -kS chmod a+x /usr/bin/java
+    else
+      echo -en &apos;Please set the JDK correctly in config file and re-run \n\n&apos;
+      echo -en &apos;VALID OPTIONS are OPENJDK and IBMJDK and are case sensitive \n\n&apos;
+      exit 1
+    fi
+    export PATH=$JAVA_HOME/bin:$PATH
+    
+    if [ &quot;$(. /etc/os-release; echo $NAME)&quot; = &quot;Ubuntu&quot; ]; then
+      echo ${passWordR} | sudo -S apt-get install -y  ca-certificates-java
+      echo ${passWordR} | sudo -S update-ca-certificates -f
+      echo -en &apos;#Installing Git\n\n&apos;
+      #echo ${passWordR} | sudo -S update-alternatives --install
+      echo ${passWordR} | sudo -S apt-get -y install git
+      echo -en &apos;#Installing R for sparkR-pkg\n\n&apos;
+      echo ${passWordR} | sudo -S apt-get -y install r-base-core
+      echo -en &apos;#Installing r-cran-testthat python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1 libsnappy-dev build-essential libstdc++6 \n\n&apos;
+      echo ${passWordR} | sudo -S apt-get update
+      for i in r-cran-testthat python-nose python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1v5 libsnappy-dev libsnappy1 build-essential libstdc++6 cython; do
+        echo ${passWordR} | sudo -S apt-get -y install $i
+      done
+      #echo ${passWordR} | sudo -S apt-get -y install r-cran-testthat python-nose python-numpy python-scipy libblas-dev liblapack-dev python-dev python3-numpy python3-scipy python-dev gfortran libsnappy1v5 libsnappy-dev libsnappy1 build-essential libstdc++6 cython
+    else
+        #sudo -S vi /etc/yum/pluginconf.d/search-disabled-repos.conf
+        #echo ${passWordR} | sudo -S yum -y update
+        echo -en &apos;#Installing Git\n\n&apos;
+        echo ${passWordR} | sudo -S yum -y install git
+        echo -en &apos;#Installing R for sparkR-pkg\n\n&apos;
+        echo ${passWordR} | sudo -S yum --assumeyes -y install R
+        echo -en &apos;#Installing numpy scipy gfortran snappy snappy-devel and build-essential tools \n\n&apos;
+        echo ${passWordR} | sudo -S yum -y groupinstall &apos;Development Tools&apos;
+        for j in snappy snappy-devel zip r-cran-testthat numpy python34-devel python34-numpy python34-scipy python-devel scipy Cython; do
+          echo ${passWordR} | sudo -S yum -y install $j
+        done
+    fi
+    echo -en &apos;#Downloading and Installing Maven 3.3.9\n\n&apos;
+    rm -rf apache-maven-3.*
+    #wget http://apache.mirrors.lucidnetworks.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    wget http://mirror.fibergrid.in/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    mkdir -p maven
+    mv apache-maven-3.3.9-bin.tar.gz maven/
+    cd maven/
+    tar -xzvf apache-maven-3.3.9-bin.tar.gz
+    echo -en &apos;#Setting up Path for Maven \n\n&apos;
+    export M2_HOME=${workdirR}/maven/apache-maven-3.3.9
+    export M2=$M2_HOME/bin
+    export MAVEN_OPTS=&quot;-Xms512m -Xmx2048m&quot;
+    export PATH=$M2:$PATH
+    echo -en &apos;#Setting up Leveldb and Leveldbjni \n\n&apos;
+    cd ${workdirR}
+    git clone https://github.com/ibmsoe/leveldbjni
+    git clone https://github.com/ibmsoe/leveldb
+    export SNAPPY_HOME=/usr/lib
+    export LEVELDB_HOME=`cd leveldb; pwd`
+    export LEVELDBJNI_HOME=`cd leveldbjni; pwd`
+    cd ${LEVELDB_HOME}
+    export LIBRARY_PATH=${SNAPPY_HOME}
+    export C_INCLUDE_PATH=${LIBRARY_PATH}
+    export CPLUS_INCLUDE_PATH=${LIBRARY_PATH}
+    git apply ../leveldbjni/leveldb.patch
+    make libleveldb.a
+    cd ${LEVELDBJNI_HOME}
+    mvn clean install -DskipTests -P download -Plinux64,all
+    cd ${workdirR}
+    echo -en &apos;Setting up OpenBLAS \n\n&apos;
+    git clone https://github.com/xianyi/OpenBLAS
+    cd OpenBLAS
+    make FC=gfortran
+    make PREFIX=${workdirR}/openblas install
+    echo -e &quot;${workdirR}/openblas/lib&quot; &gt; openblas.conf
+    echo ${passWordR} | sudo -S mv openblas.conf /etc/ld.so.conf.d/
+    echo ${passWordR} | sudo -S ldconfig
+EOF
+done
+
+
+now=$(date +&quot;%d-%m-%Y_%H:%M:%S&quot;)
+
+cp /var/lib/jenkins/jobs/${JOB_NAME}/builds/${BUILD_NUMBER}/log ${workDir}/logs/${JOB_NAME}/${JOB_NAME}_${now}.log
+
+exit 0</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>
