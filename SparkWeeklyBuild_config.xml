@@ -64,7 +64,7 @@ cd ${workDirR}/workspace/${IPbaremetalR}-SparkBranch-${branchClone}-Hadoop-${had
 
 rm -rf spark
 
-git clone --recursive https://github.com/apache/spark.git -b branch-${branchClone}
+git clone --recursive --depth 1 https://github.com/apache/spark.git -b branch-${branchClone}
 
 cd spark
 
