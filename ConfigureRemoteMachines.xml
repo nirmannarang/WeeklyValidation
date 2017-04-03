@@ -17,9 +17,9 @@
 
 workDir=/root/WeeklyValidation
 echo -en &apos;Configuring Remote Machines added in BaremetalMachines directory \n\n&apos;
-cd ${workdir}/baremetalMachines/
+cd ${workDir}/baremetalMachines/
 for filename in *; do
-    cd ${workdir}/baremetalMachines/
+    cd ${workDir}/baremetalMachines/
 
     echo -en &apos;Configuring Machine &apos; ${filename} &apos;\n\n&apos;
     IPbaremetal=${filename}
@@ -28,7 +28,7 @@ for filename in *; do
     passWord=$(grep -Po &apos;(?&lt;=passWord=).*&apos; ${filename})
 
     echo -en &apos;Copying WeeklyValidation to &apos; ${IPbaremetal} &apos; under User &apos; ${userName} &apos;\n\n&apos;
-    scp -r ${workdir} ${userName}@${IPbaremetal}:
+    scp -r ${workDir} ${userName}@${IPbaremetal}:
 
     echo -en &apos;ssh &apos; ${IPbaremetal} &apos; to user &apos; ${userName} &apos;\n\n&apos;
     ssh ${userName}@${IPbaremetal} /bin/bash &lt;&lt;&apos;EOF&apos;
